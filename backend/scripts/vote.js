@@ -1,12 +1,12 @@
 // scripts/vote.js
-// ChainVote Backend — Vote Runner
-// Calls voteService.castVote(). Change CANDIDATE_ID to target a different candidate.
+// Runs voteService
 
 const { castVote } = require("../services/voteService");
+const { error } = require("../utils/logger");
 
 const CANDIDATE_ID = 1;
 
 castVote(CANDIDATE_ID).catch((err) => {
-  console.error("[scripts/vote] Error:", err.reason || err.message);
+  error("[scripts/vote] Error running vote script.");
   process.exit(1);
 });
