@@ -6,16 +6,14 @@
   "scripts": {
     "vote": "node scripts/vote.js",
     "read": "node scripts/read.js",
-    "events": "node scripts/events.js"
-  },
-  "dependencies": {
-    "dotenv": "^16.4.5",
-    "ethers": "^6.15.0"
-  },
-  "scripts": {
+    "events": "node scripts/events.js",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "start": "vite preview"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "ethers": "^6.15.0"
   }
 }
