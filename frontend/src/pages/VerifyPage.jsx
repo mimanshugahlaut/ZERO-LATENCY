@@ -10,7 +10,7 @@ const MOCK_CHAIN_DETAILS = {
   computedAt:     new Date().toLocaleTimeString(),
 };
 
-export default function VerifyPage({ election, callRead, toast }) {
+export default function VerifyPage({ callRead, toast }) {
   const [status, setStatus]  = useState('idle');  // idle | verifying | intact | broken
   const [details, setDetails] = useState(null);
   
@@ -22,8 +22,8 @@ export default function VerifyPage({ election, callRead, toast }) {
     setStatus('verifying');
     await new Promise(r => setTimeout(r, 2200)); // Simulate chain walk
     try {
-      const result = callRead ? await callRead('verifyChain') : true;
-      const isIntact = Boolean(result);
+      const result = callRead ? await callRead('verifyChain') : [true];
+      const isIntact = Boolean(result[0]);
       setStatus(isIntact ? 'intact' : 'broken');
       setDetails(MOCK_CHAIN_DETAILS);
       if (isIntact) toast.success('Chain integrity verified ✅');

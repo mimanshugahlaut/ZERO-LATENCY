@@ -56,7 +56,7 @@ export function AuthModal({ isOpen, onClose, onLogin }) {
         setIdentifier('');
         setOtp('');
       }, 300);
-    } catch (err) {
+    } catch {
       setError('Invalid OTP code');
     } finally {
       setIsLoading(false);

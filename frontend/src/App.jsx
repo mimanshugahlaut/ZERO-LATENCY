@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Layout }      from './components/layout/Layout';
 import { ToastRenderer, useToast } from './components/ui/Toast';
-import { useAuth }    from './hooks/useAuth';
-import { AuthModal }   from './components/auth/AuthModal';
+import { useWallet }    from './hooks/useWallet';
 import { useContract }  from './hooks/useContract';
 import { useElection }  from './hooks/useElection';
 import { useCandidates } from './hooks/useCandidates';
@@ -18,25 +17,24 @@ import AdminPage   from './pages/AdminPage';
 export default function App() {
   const [page, setPage] = useState('vote');
 
-  // Core hooks
-  const auth        = useAuth();
-  // We'll stub wallet out to prevent breaking legacy components temporarily, mapping account to user id.
-  const wallet      = { 
-    account: auth.user?.id || null, 
-    isConnecting: auth.isLoading, 
-    isConnected: auth.isAuthenticated,
-    connect: () => auth.setIsAuthModalOpen(true),
-    disconnect: auth.logout
+  const wallet = useWallet();
+  const auth = {
+    user: wallet.account ? { id: wallet.account, identifier: wallet.account } : null,
+    isAuthenticated: wallet.isConnected,
+    isLoading: wallet.isConnecting,
+    setIsAuthModalOpen: wallet.connect,
+    logout: wallet.disconnect,
   };
 
-  const { callRead, callWrite, readContract } = useContract(wallet.account);
+  const contract = useContract();
+  const { callRead, callWrite, readContract } = contract;
   const election    = useElection(callRead);
   const candidates  = useCandidates(callRead);
   const events      = useEvents(readContract, candidates.candidates);
   const toast       = useToast();
 
   const renderPage = () => {
-    const commonProps = { wallet, auth, election, callRead, callWrite, toast };
+    const commonProps = { wallet, auth, contract, election, callRead, callWrite, toast };
     switch (page) {
       case 'vote':    return <VotePage    {...commonProps} candidates={candidates} />;
       case 'ledger':  return <LedgerPage  {...commonProps} candidates={candidates} />;
@@ -61,18 +59,6 @@ export default function App() {
         {renderPage()}
       </Layout>
 
-      {/* Auth Modal for Email/Phone OTP */}
-      <AuthModal 
-        isOpen={auth.isAuthModalOpen} 
-        onClose={() => auth.setIsAuthModalOpen(false)} 
-        onLogin={(identifier, method) => {
-          return auth.login(identifier, method).then(() => {
-            toast.add('Successfully securely logged in', 'success');
-          });
-        }} 
-      />
-
-      {/* Global toast notifications */}
       <ToastRenderer toasts={toast.toasts} remove={toast.remove} />
     </>
   );

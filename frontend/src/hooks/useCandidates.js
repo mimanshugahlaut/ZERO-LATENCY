@@ -1,32 +1,28 @@
 import { useState, useEffect, useCallback } from 'react';
 import { candidateDotColor } from '../utils/formatters';
 
-export const MOCK_CANDIDATES = [
-  { id: 0, name: 'Alice Johnson',   party: 'Transparency Party',   voteCount: 19 },
-  { id: 1, name: 'Bob Martinez',    party: 'Innovation Alliance',   voteCount: 15 },
-  { id: 2, name: 'Carol Chen',      party: 'Progressive Front',    voteCount: 9 },
-  { id: 3, name: 'David Okafor',    party: 'Reform Coalition',     voteCount: 4 },
-];
-
 export function useCandidates(callRead) {
-  const [candidates, setCandidates] = useState(MOCK_CANDIDATES);
+  const [candidates, setCandidates] = useState([]);
   const [loading, setLoading]       = useState(true);
 
   const fetchCandidates = useCallback(async () => {
     if (!callRead) { setLoading(false); return; }
     try {
-      const count = Number(await callRead('candidateCount'));
-      if (count === 0) { setCandidates(MOCK_CANDIDATES); setLoading(false); return; }
-      const results = await Promise.all(
-        Array.from({ length: count }, (_, i) => callRead('getCandidate', i))
-      );
-      setCandidates(results.map((r, i) => ({
-        id:        Number(r.id ?? i),
+      const results = await callRead('getAllCandidates');
+      if (!Array.isArray(results)) {
+        setCandidates([]);
+        return;
+      }
+      const formatted = results.map((r) => ({
+        id:        Number(r.id),
         name:      r.name,
         voteCount: Number(r.voteCount),
-      })));
-    } catch {
-      setCandidates(MOCK_CANDIDATES);
+        exists:    r.exists
+      }));
+      setCandidates(formatted);
+    } catch (e) {
+      console.error(e);
+      setCandidates([]);
     } finally {
       setLoading(false);
     }
@@ -38,7 +34,6 @@ export function useCandidates(callRead) {
     return () => clearInterval(interval);
   }, [fetchCandidates]);
 
-  // Enrich with colors
   const enriched = candidates.map((c, i) => ({
     ...c,
     dotColor: candidateDotColor(i),

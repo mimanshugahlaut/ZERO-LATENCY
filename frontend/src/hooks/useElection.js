@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ELECTION_STATE } from '../utils/constants';
-import { MOCK_CANDIDATES } from './useCandidates';
 
 export function useElection(callRead) {
   const [state, setState]           = useState(null);
-  const [name, setName]             = useState('Board Election 2025');
+  const [name]                      = useState('ChainVote Election');
   const [totalVotes, setTotalVotes] = useState(0);
   const [chainLength, setChainLength] = useState(0);
   const [loading, setLoading]       = useState(true);
@@ -12,21 +11,23 @@ export function useElection(callRead) {
   const fetchElectionData = useCallback(async () => {
     if (!callRead) return;
     try {
-      const [elState, elName, votes, cLen] = await Promise.all([
-        callRead('electionState'),
-        callRead('electionName'),
-        callRead('totalVotes'),
-        callRead('chainLength'),
-      ]);
-      setState(Number(elState));
-      setName(elName);
-      setTotalVotes(Number(votes));
-      setChainLength(Number(cLen));
+      const isActive = await callRead('electionActive');
+      const length = await callRead('getLedgerLength');
+
+      if (typeof isActive !== 'boolean' || length === null || length === undefined) {
+        setState(null);
+        setTotalVotes(0);
+        setChainLength(0);
+        return;
+      }
+
+      setState(isActive ? ELECTION_STATE.STARTED : ELECTION_STATE.NOT_STARTED);
+      setTotalVotes(Number(length));
+      setChainLength(Number(length));
     } catch {
-      // Contract not deployed — use mock state
-      setState(ELECTION_STATE.STARTED);
-      setTotalVotes(47);
-      setChainLength(47);
+      setState(ELECTION_STATE.NOT_STARTED);
+      setTotalVotes(0);
+      setChainLength(0);
     } finally {
       setLoading(false);
     }

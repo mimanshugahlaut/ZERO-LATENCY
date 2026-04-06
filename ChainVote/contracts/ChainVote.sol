@@ -49,6 +49,9 @@ contract ChainVote {
     }
 
     function addCandidate(uint256 _id, string memory _name) external onlyAdmin {
+        require(!electionActive, "Cannot add candidates while election is active");
+        require(_id != 0, "Candidate ID must be non-zero");
+        require(bytes(_name).length > 0, "Candidate name is required");
         require(!candidates[_id].exists, "Candidate ID already exists");
 
         candidates[_id] = Candidate({

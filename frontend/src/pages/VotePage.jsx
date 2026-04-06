@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ELECTION_STATE } from '../utils/constants';
-import { candidateGradient, getInitials, calcPercent, copyToClipboard } from '../utils/formatters';
+import { candidateGradient, getInitials, copyToClipboard } from '../utils/formatters';
 import { Button } from '../components/ui/Button';
 import { Modal }  from '../components/ui/Modal';
 import { Badge }  from '../components/ui/Badge';
@@ -8,9 +8,11 @@ import { SkeletonCard } from '../components/ui/Skeleton';
 import { EmptyState }   from '../components/ui/EmptyState';
 
 function Countdown({ targetMs }) {
-  const [diff, setDiff] = useState(targetMs - Date.now());
+  const [diff, setDiff] = useState(0);
   useEffect(() => {
-    const id = setInterval(() => setDiff(targetMs - Date.now()), 1000);
+    const tick = () => setDiff(targetMs - Date.now());
+    tick();
+    const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [targetMs]);
   const total = Math.max(0, diff);
@@ -34,22 +36,21 @@ function Countdown({ targetMs }) {
 }
 
 export default function VotePage({ auth, election, candidates, callWrite, toast }) {
-  const { user, isAuthenticated, setIsAuthModalOpen } = auth || {};
-  const { state, name, totalVotes, loading: elLoading } = election;
+  const { isAuthenticated, setIsAuthModalOpen } = auth || {};
+  const { state, name, totalVotes } = election;
   const { candidates: list, loading: cLoading } = candidates;
 
   const [hasVoted, setHasVoted]           = useState(false);
   const [receiptKey, setReceiptKey]       = useState(null);
   const [confirming, setConfirming]       = useState(null);
   const [voting, setVoting]               = useState(false);
-  const [targetTime]                      = useState(Date.now() + 3_600_000 * 4); // 4h from now (mock)
+  const [targetTime]                      = useState(() => Date.now() + 3_600_000 * 4); // 4h from now (mock)
 
   const handleVote = async () => {
     if (!confirming) return;
     setVoting(true);
     try {
-      // Simulate real contract / backend call
-      await new Promise(r => setTimeout(r, 1200));
+      await callWrite('castVote', confirming.id);
       
       // Generate a secret receipt key
       const generatedKey = `rcpt_${Math.random().toString(36).substr(2, 9)}_${confirming.id}`;
@@ -59,7 +60,8 @@ export default function VotePage({ auth, election, candidates, callWrite, toast 
       setConfirming(null);
       toast.success(`Vote cast securely! ✅`);
     } catch (err) {
-      toast.error('Vote failed. Try again.');
+      console.error("handleVote Error:", err);
+      toast.error(err?.message?.includes('user rejected') ? 'Rejected by user.' : err?.message || 'Vote failed. Try again.');
     } finally {
       setVoting(false);
     }

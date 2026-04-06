@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { truncateAddress, truncateHash, timeAgo, copyToClipboard } from '../utils/formatters';
-import { Badge } from '../components/ui/Badge';
+import { truncateHash, timeAgo, copyToClipboard } from '../utils/formatters';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Skeleton } from '../components/ui/Skeleton';
 
@@ -65,9 +64,7 @@ function CopyButton({ text, toast }) {
   );
 }
 
-function BlockCard({ block, isFirst, candidates, toast }) {
-  const [expanded, setExpanded] = useState(false);
-
+function BlockCard({ block, toast }) {
   // In Secret Ballot, we disregard the candidate object for public blocks
   const candidateName = block.isGenesis ? block.candidateName : 'Encrypted Vote Payload';
   const dotColor = block.isGenesis ? '#3b82f6' : '#4b5563';
@@ -128,7 +125,7 @@ function BlockCard({ block, isFirst, candidates, toast }) {
   );
 }
 
-export default function LedgerPage({ election, candidates, callRead, toast }) {
+export default function LedgerPage({ election, callRead, toast }) {
   const [chain, setChain]     = useState(MOCK_CHAIN);
   const [loading, setLoading] = useState(false);
 
@@ -138,7 +135,7 @@ export default function LedgerPage({ election, candidates, callRead, toast }) {
       setLoading(true);
       try {
         const blocks = await Promise.all(
-          Array.from({ length: election.chainLength }, (_, i) => callRead('getBlock', i))
+          Array.from({ length: election.chainLength }, (_, i) => callRead('ledger', i))
         );
         const enriched = blocks.map((b, i) => ({
           index:         i,
@@ -185,7 +182,7 @@ export default function LedgerPage({ election, candidates, callRead, toast }) {
         <div className="ledger-chain">
           {chain.map((block, i) => (
             <div key={block.index}>
-              <BlockCard block={block} isFirst={i===0} candidates={candidates?.candidates} toast={toast} />
+              <BlockCard block={block} toast={toast} />
               {i < chain.length - 1 && (
                 <div className="ledger-connector">
                   <div className="chain-link-icon">🔗</div>

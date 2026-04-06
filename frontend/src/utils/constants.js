@@ -6,7 +6,7 @@ export const BREAKPOINTS = {
   wide:    1440,
 };
 
-// Election states (matches contract enum)
+// Election states (matches frontend enum mapping)
 export const ELECTION_STATE = {
   NOT_STARTED: 0,
   STARTED:     1,
@@ -44,18 +44,24 @@ export const AUDIT_EVENTS = {
   END:        { label: 'Election Ended',    color: '#f59e0b', icon: '🏁' },
 };
 
-// Local Hardhat chain config
+import deployedContract from './contract-address.json';
+
+// Web3 configs
+export const CONTRACT_ADDRESS = (deployedContract?.address || '').trim();
+export const CHAIN_ID = Number(deployedContract?.chainId) || 31337;
+export const CHAIN_HEX_ID = `0x${CHAIN_ID.toString(16)}`;
+
+// Network configs
 export const CHAIN_CONFIG = {
-  chainId:   '0x7A69', // 31337
+  chainId:   CHAIN_HEX_ID,
   chainName: 'Hardhat Local',
   rpcUrl:    'http://127.0.0.1:8545',
-};
-
-// Sepolia testnet
-export const SEPOLIA_CONFIG = {
-  chainId:   '0xAA36A7',
-  chainName: 'Sepolia Testnet',
-  rpcUrl:    'https://rpc.sepolia.org',
+  rpcUrls:   ['http://127.0.0.1:8545'],
+  nativeCurrency: {
+    name: 'Ethereum',
+    symbol: 'ETH',
+    decimals: 18,
+  },
 };
 
 // Max feed items to show

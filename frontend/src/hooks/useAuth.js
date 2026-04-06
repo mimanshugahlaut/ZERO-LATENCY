@@ -1,33 +1,33 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 // Generates a mock user ID for simulated registration/login
-const generateUserId = () => 'user_' + Math.random().toString(36).substr(2, 9);
+const generateUserId = () => `user_${Math.random().toString(36).slice(2, 11)}`;
+
+function loadSession() {
+  try {
+    const raw = localStorage.getItem('chainvote_auth');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
 
 export function useAuth() {
-  const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState(loadSession);
+  const [isLoading, setIsLoading] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-
-  // Load session from localStorage on mount
-  useEffect(() => {
-    const session = localStorage.getItem('chainvote_auth');
-    if (session) {
-      setUser(JSON.parse(session));
-    }
-    setIsLoading(false);
-  }, []);
 
   const login = async (identifier, method = 'email') => {
     setIsLoading(true);
+
     // Simulate network delay for OTP verification
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // Create session
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
     const sessionUser = {
       id: generateUserId(),
-      identifier, // The email or phone number
+      identifier,
       method,
-      sessionToken: 'tk_' + Math.random().toString(36).substr(2, 12)
+      sessionToken: `tk_${Math.random().toString(36).slice(2, 14)}`,
     };
 
     setUser(sessionUser);
@@ -39,17 +39,15 @@ export function useAuth() {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('chainvote_auth');
-    // Also clear any vote receipts they might have stored locally if necessary
-    // But for a true hackathon demo, we might want to keep the receipt. 
   };
 
   return {
     user,
-    isAuthenticated: !!user,
+    isAuthenticated: Boolean(user),
     isLoading,
     login,
     logout,
     isAuthModalOpen,
-    setIsAuthModalOpen
+    setIsAuthModalOpen,
   };
 }
