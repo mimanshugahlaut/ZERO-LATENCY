@@ -1,0 +1,15 @@
+{
+  "name": "chainvote-backend",
+  "version": "1.0.0",
+  "description": "Backend interaction layer for ChainVote",
+  "main": "config/index.js",
+  "scripts": {
+    "vote": "node scripts/vote.js",
+    "read": "node scripts/read.js",
+    "events": "node scripts/events.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "ethers": "^6.15.0"
+  }
+}
