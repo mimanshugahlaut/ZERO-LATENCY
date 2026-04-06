@@ -4,16 +4,14 @@
   "description": "Backend interaction layer for ChainVote",
   "main": "config/index.js",
   "scripts": {
+    "start": "node server.js",
     "vote": "node scripts/vote.js",
     "read": "node scripts/read.js",
-    "events": "node scripts/events.js",
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "start": "vite preview"
+    "events": "node scripts/events.js"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
-    "ethers": "^6.15.0"
+    "ethers": "^6.15.0",
+    "express": "^4.22.1"
   }
 }
