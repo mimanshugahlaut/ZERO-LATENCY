@@ -1,3 +1,8 @@
+// ── Admin identity ─────────────────────────────────────────────────────────
+// Hardhat Account #0 — the wallet that deployed the contract.
+// Change this to your actual deployer wallet when moving to production.
+export const ADMIN_ADDRESS = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+
 // Responsive breakpoints (px)
 export const BREAKPOINTS = {
   mobile:  640,
@@ -25,15 +30,19 @@ export const STATE_BADGE_CLASS = {
   [ELECTION_STATE.ENDED]:       'badge-amber',
 };
 
-// Nav items
+// All nav items (used as source of truth)
 export const NAV_ITEMS = [
-  { id: 'vote',    label: 'Vote',      icon: '🗳️',  emoji: '🗳️'  },
-  { id: 'ledger',  label: 'Ledger',    icon: '📒',  emoji: '📒'  },
-  { id: 'results', label: 'Results',   icon: '📊',  emoji: '📊'  },
-  { id: 'audit',   label: 'Audit',     icon: '🔍',  emoji: '🔍'  },
-  { id: 'verify',  label: 'Verify',    icon: '✅',  emoji: '✅'  },
-  { id: 'admin',   label: 'Admin',     icon: '⚙️',  emoji: '⚙️'  },
+  { id: 'vote',    label: 'Vote',    icon: '🗳️', emoji: '🗳️' },
+  { id: 'ledger',  label: 'Ledger',  icon: '📒', emoji: '📒' },
+  { id: 'results', label: 'Results', icon: '📊', emoji: '📊' },
+  { id: 'audit',   label: 'Audit',   icon: '🔍', emoji: '🔍' },
+  { id: 'verify',  label: 'Verify',  icon: '✅', emoji: '✅' },
+  { id: 'admin',   label: 'Admin',   icon: '⚙️', emoji: '⚙️' },
 ];
+
+// Role-filtered nav sets
+export const ADMIN_NAV_ITEMS = ['admin', 'audit', 'ledger', 'results', 'verify'];
+export const VOTER_NAV_ITEMS = ['vote', 'results', 'verify'];
 
 // Audit event types
 export const AUDIT_EVENTS = {

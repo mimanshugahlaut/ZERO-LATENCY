@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { MAX_FEED_ITEMS } from '../utils/constants';
+import { pushLog }       from './useActivityLog';
+import { truncateAddress } from '../utils/formatters';
 
 export function useEvents(readContract, candidates) {
   const [events, setEvents] = useState([]);
@@ -22,6 +24,34 @@ export function useEvents(readContract, candidates) {
       setTimeout(() => setEvents(e => e.map(ev => ev.id === newEvt.id ? { ...ev, isNew: false } : ev)), 3000);
       return updated;
     });
+
+    // ── Push to Activity Log ────────────────────────────────
+    const candidateName = candidates?.find(c => c.id === Number(candidateId))?.name
+                          || `Candidate #${candidateId}`;
+    const blockNum = evt?.blockNumber ?? null;
+
+    // Public-safe entry (no voter identity)
+    pushLog(
+      'vote',
+      `A verified ballot was recorded on-chain for ${candidateName}.`,
+      { blockNumber: blockNum, candidateName },
+      'both'  // visible to everyone
+    );
+
+    // Admin-only entry with raw voter address
+    pushLog(
+      'vote',
+      `Vote cast by ${truncateAddress(voter, 10, 8)} → ${candidateName}`,
+      {
+        actor:       voter,
+        txHash:      voteHash,
+        blockNumber: blockNum,
+        candidateName,
+        gas:         evt?.gasUsed?.toString?.() || '—',
+        raw:         voteHash,
+      },
+      'admin'  // only admin sees this
+    );
   }, [candidates]);
 
   useEffect(() => {

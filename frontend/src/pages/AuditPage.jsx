@@ -1,7 +1,9 @@
-import { useState } from 'react';
-import { AUDIT_EVENTS } from '../utils/constants';
+import { useState, useEffect } from 'react';
+import { AUDIT_EVENTS }   from '../utils/constants';
 import { truncateAddress, timeAgo, formatDateTime } from '../utils/formatters';
-import { EmptyState } from '../components/ui/EmptyState';
+import { EmptyState }      from '../components/ui/EmptyState';
+import ActivityLog         from '../components/ui/ActivityLog';
+import { pushLog }         from '../hooks/useActivityLog';
 
 const MOCK_AUDIT = [
   {
@@ -105,6 +107,10 @@ function AuditEntry({ entry }) {
 export default function AuditPage() {
   const [filter, setFilter] = useState('All');
 
+  useEffect(() => {
+    pushLog('info', 'Audit Trail page opened. Displaying tamper-proof log.', {}, 'both');
+  }, []);
+
   const filtered = filter === 'All'
     ? MOCK_AUDIT
     : MOCK_AUDIT.filter(e => e.type === filter);
@@ -133,7 +139,7 @@ export default function AuditPage() {
         </span>
       </div>
 
-      {/* Timeline */}
+      {/* Static historical timeline */}
       {filtered.length === 0 ? (
         <EmptyState icon="🔍" title="No events match this filter" />
       ) : (
@@ -143,6 +149,11 @@ export default function AuditPage() {
           ))}
         </div>
       )}
+
+      {/* Live activity feed — public privacy-safe view */}
+      <div style={{ marginTop:'var(--space-8)' }}>
+        <ActivityLog isAdmin={false} maxHeight="380px" title="📡 Live Session Activity" />
+      </div>
     </>
   );
 }

@@ -1,7 +1,9 @@
-import { useState } from 'react';
-import { ELECTION_STATE } from '../utils/constants';
-import { Button } from '../components/ui/Button';
-import { Badge }  from '../components/ui/Badge';
+import { useState, useEffect } from 'react';
+import { ELECTION_STATE }  from '../utils/constants';
+import { Button }          from '../components/ui/Button';
+import { Badge }           from '../components/ui/Badge';
+import { pushLog }         from '../hooks/useActivityLog';
+import ActivityLog         from '../components/ui/ActivityLog';
 
 function Section({ title, children }) {
   return (
@@ -12,7 +14,7 @@ function Section({ title, children }) {
   );
 }
 
-export default function AdminPage({ wallet, contract, election, callWrite, toast }) {
+export default function AdminPage({ wallet, role, contract, election, callWrite, toast }) {
   const { account, isConnected } = wallet;
   const { state, name, refresh } = election;
   const contractAddress = contract?.contractAddress;
@@ -22,62 +24,94 @@ export default function AdminPage({ wallet, contract, election, callWrite, toast
   const [starting, setStarting]           = useState(false);
   const [ending, setEnding]               = useState(false);
 
+  // Push a system-init log once on mount
+  useEffect(() => {
+    pushLog('system', 'Admin panel loaded. Contract interaction ready.', { actor: account }, 'admin');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleAddCandidate = async (e) => {
     e.preventDefault();
     if (!candidateName.trim()) return;
-    
-    // 7. Ensure UI flow: Button click -> connect wallet -> call contract
-    if (!isConnected) {
-      await wallet.connect(); 
-    }
-    
+    if (!isConnected) await wallet.connect();
     setAdding(true);
     try {
       const newId = Date.now();
-      // 4. Fix write calls: addCandidate(uint256 id, string name)
-      await callWrite('addCandidate', newId, candidateName.trim());
-      
+      const tx = await callWrite('addCandidate', newId, candidateName.trim());
+      pushLog('admin', `Candidate "${candidateName.trim()}" added to the election.`, {
+        actor:  account, txHash: tx?.hash,
+        raw:    `addCandidate(${newId}, "${candidateName.trim()}")`,
+      }, 'admin');
       toast.success(`Candidate "${candidateName}" added!`);
       setCandidateName('');
       refresh();
     } catch (err) {
-      console.error("handleAddCandidate Error:", err);
+      pushLog('error', `Failed to add candidate: ${err?.message?.slice(0,80)}`, {}, 'admin');
       toast.error(err?.message?.includes('user rejected') ? 'Rejected by user.' : err?.message || 'Failed to add candidate.');
     } finally { setAdding(false); }
   };
 
   const handleStart = async () => {
-    if (!isConnected) {
-      await wallet.connect(); 
-    }
+    if (!isConnected) await wallet.connect();
     setStarting(true);
     try {
-      // 4. Fix write calls: startElection() -> no args
-      await callWrite('startElection');
-      
+      const tx = await callWrite('startElection');
+      pushLog('system', 'Election officially started. Voting is now ACTIVE.', {
+        actor: account, txHash: tx?.hash, raw: 'startElection()',
+      }, 'both');
       toast.success('Election started! 🚀');
       refresh();
     } catch (err) {
-      console.error("handleStart Error:", err);
+      pushLog('error', `Failed to start election: ${err?.message?.slice(0,80)}`, {}, 'admin');
       toast.error(err?.message?.includes('user rejected') ? 'Rejected by user.' : err?.message || 'Failed to start election.');
     } finally { setStarting(false); }
   };
 
   const handleEnd = async () => {
-    if (!isConnected) {
-      await wallet.connect(); 
-    }
+    if (!isConnected) await wallet.connect();
     setEnding(true);
     try {
-      await callWrite('endElection');
+      const tx = await callWrite('endElection');
+      pushLog('system', 'Election has been closed. No further votes will be accepted.', {
+        actor: account, txHash: tx?.hash, raw: 'endElection()',
+      }, 'both');
       toast.success('Election ended. 🏁');
       refresh();
     } catch (err) {
-      console.error("handleEnd Error:", err);
+      pushLog('error', `Failed to end election: ${err?.message?.slice(0,80)}`, {}, 'admin');
       toast.error(err?.message?.includes('user rejected') ? 'Rejected by user.' : 'Failed to end election.');
     } finally { setEnding(false); }
   };
 
+  // ── Gate 1: connected but not admin ──────────────────────────────────────
+  if (isConnected && role && !role.isAdmin) {
+    return (
+      <>
+        <div className="page-header">
+          <h1 className="page-title">Admin Panel</h1>
+        </div>
+        <div className="access-denied">
+          <div className="access-denied-icon">⛔</div>
+          <p style={{ fontFamily:'var(--font-display)', fontSize:'1.2rem', fontWeight:700 }}>
+            Access Denied
+          </p>
+          <p style={{ color:'var(--on-surface-variant)', fontSize:'0.88rem', maxWidth:380, textAlign:'center', marginBottom:'var(--space-4)' }}>
+            Only the contract admin wallet can access this page.<br />
+            Connected as: <code style={{ color:'var(--error)', fontSize:'0.8rem' }}>
+              {account?.slice(0,10)}…{account?.slice(-6)}
+            </code>
+          </p>
+          <div style={{ padding:'var(--space-3) var(--space-5)', borderRadius:'var(--radius-lg)',
+            background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)',
+            fontSize:'0.8rem', color:'var(--error)', fontFamily:'var(--font-mono)' }}>
+            ⚠️ This action is restricted to the contract owner.
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // ── Gate 2: not connected ─────────────────────────────────────────────────
   if (!isConnected) {
     return (
       <>
@@ -87,8 +121,8 @@ export default function AdminPage({ wallet, contract, election, callWrite, toast
         <div className="access-denied">
           <div className="access-denied-icon">🔒</div>
           <p style={{ fontFamily:'var(--font-display)', fontSize:'1.2rem', fontWeight:700 }}>Wallet Not Connected</p>
-          <p style={{ color:'var(--on-surface-variant)', fontSize:'0.88rem', marginBottom: 'var(--space-4)' }}>
-            Connect your wallet to access admin functions.
+          <p style={{ color:'var(--on-surface-variant)', fontSize:'0.88rem', marginBottom:'var(--space-4)' }}>
+            Connect your admin wallet to access admin functions.
           </p>
           <Button variant="primary" onClick={wallet.connect}>Connect Wallet</Button>
         </div>
@@ -171,7 +205,7 @@ export default function AdminPage({ wallet, contract, election, callWrite, toast
         </Button>
       </Section>
 
-      <div style={{ background:'var(--surface-container)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-lg)', padding:'var(--space-5)', fontSize:'0.8rem', color:'var(--on-surface-variant)' }}>
+      <div style={{ background:'var(--surface-container)', border:'1px solid var(--glass-border)', borderRadius:'var(--radius-lg)', padding:'var(--space-5)', fontSize:'0.8rem', color:'var(--on-surface-variant)', marginBottom:'var(--space-6)' }}>
         <p style={{ fontFamily:'var(--font-mono)', marginBottom:4 }}>
           ⚙️ Contract: <span style={{ color:'var(--primary)' }}>{contractAddress || 'Not synced'}</span>
         </p>
@@ -179,6 +213,9 @@ export default function AdminPage({ wallet, contract, election, callWrite, toast
           👤 Admin: <span style={{ color:'var(--tertiary)' }}>{account ? `${account.slice(0,10)}...${account.slice(-8)}` : '—'}</span>
         </p>
       </div>
+
+      {/* Admin activity log — shows full detail including addresses and gas */}
+      <ActivityLog isAdmin={true} maxHeight="420px" />
     </>
   );
 }

@@ -35,7 +35,7 @@ function Countdown({ targetMs }) {
   );
 }
 
-export default function VotePage({ auth, election, candidates, callWrite, toast }) {
+export default function VotePage({ auth, role, election, candidates, callWrite, toast }) {
   const { isAuthenticated, setIsAuthModalOpen } = auth || {};
   const { state, name, totalVotes } = election;
   const { candidates: list, loading: cLoading } = candidates;
@@ -44,7 +44,33 @@ export default function VotePage({ auth, election, candidates, callWrite, toast 
   const [receiptKey, setReceiptKey]       = useState(null);
   const [confirming, setConfirming]       = useState(null);
   const [voting, setVoting]               = useState(false);
-  const [targetTime]                      = useState(() => Date.now() + 3_600_000 * 4); // 4h from now (mock)
+  const [targetTime]                      = useState(() => Date.now() + 3_600_000 * 4);
+
+  // ── Admin redirect banner ─────────────────────────────────────────────────
+  if (role?.isAdmin) {
+    return (
+      <>
+        <div className="page-header">
+          <h1 className="page-title">Admin View</h1>
+          <p className="page-subtitle">You are connected as the Admin. Use the Admin Panel to manage the election.</p>
+        </div>
+        <div className="wallet-prompt" style={{ borderColor:'rgba(139,92,246,0.35)' }}>
+          <div className="wallet-prompt-icon">⚙️</div>
+          <p className="wallet-prompt-title" style={{ background:'linear-gradient(135deg,#a78bfa,#818cf8)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
+            You're the Admin
+          </p>
+          <p style={{ color:'var(--on-surface-variant)', fontSize:'0.88rem', maxWidth:380, textAlign:'center', marginBottom:'var(--space-4)' }}>
+            Admins don't vote — they manage the election. Head to the Admin Panel to add candidates, start, or end the election.
+          </p>
+          <div style={{ padding:'var(--space-3) var(--space-5)', borderRadius:'var(--radius-lg)',
+            background:'rgba(139,92,246,0.1)', border:'1px solid rgba(139,92,246,0.3)',
+            fontSize:'0.8rem', color:'#a78bfa', fontFamily:'var(--font-mono)' }}>
+            ⚙️ Admin: {role.address?.slice(0,10)}…{role.address?.slice(-6)}
+          </div>
+        </div>
+      </>
+    );
+  }
 
   const handleVote = async () => {
     if (!confirming) return;
